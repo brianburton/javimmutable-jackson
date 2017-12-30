@@ -42,6 +42,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.deser.Deserializers;
 import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
 import com.fasterxml.jackson.databind.type.CollectionLikeType;
+import org.javimmutable.collections.Insertable;
 import org.javimmutable.collections.JImmutableList;
 import org.javimmutable.collections.JImmutableRandomAccessList;
 import org.javimmutable.collections.JImmutableSet;
@@ -60,22 +61,24 @@ public class JImmutableDeserializers
                                                               JsonDeserializer<?> elementDeserializer)
         throws JsonMappingException
     {
-        if (type.isTypeOrSubTypeOf(JImmutableRandomAccessList.class)) {
-            return new InsertableDeserializer<>(type, elementDeserializer, elementTypeDeserializer, false, JImmutables.ralist());
-        } else if (type.isTypeOrSubTypeOf(JImmutableList.class)) {
-            return new InsertableDeserializer<>(type, elementDeserializer, elementTypeDeserializer, false, JImmutables.list());
-        } else if (type.isTypeOrSubTypeOf(JImmutableSet.class)) {
-            if (type.isTypeOrSubTypeOf(SortedOrderSet.class)) {
-                requireCollectionOfComparableElements(type);
-                return new InsertableDeserializer<>(type, elementDeserializer, elementTypeDeserializer, false, JImmutables.sortedSet());
-            } else if (type.isTypeOrSubTypeOf(InsertOrderSet.class)) {
-                return new InsertableDeserializer<>(type, elementDeserializer, elementTypeDeserializer, false, JImmutables.insertOrderSet());
-            } else {
-                return new InsertableDeserializer<>(type, elementDeserializer, elementTypeDeserializer, false, JImmutables.set());
+        if (type.isTypeOrSubTypeOf(Insertable.class)) {
+            if (type.isTypeOrSubTypeOf(JImmutableRandomAccessList.class)) {
+                return new InsertableDeserializer<>(type, elementDeserializer, elementTypeDeserializer, false, JImmutables.ralist());
+            } else if (type.isTypeOrSubTypeOf(JImmutableList.class)) {
+                return new InsertableDeserializer<>(type, elementDeserializer, elementTypeDeserializer, false, JImmutables.list());
+            } else if (type.isTypeOrSubTypeOf(JImmutableSet.class)) {
+                if (type.isTypeOrSubTypeOf(SortedOrderSet.class)) {
+                    requireCollectionOfComparableElements(type);
+                    return new InsertableDeserializer<>(type, elementDeserializer, elementTypeDeserializer, false, JImmutables.sortedSet());
+                } else if (type.isTypeOrSubTypeOf(InsertOrderSet.class)) {
+                    return new InsertableDeserializer<>(type, elementDeserializer, elementTypeDeserializer, false, JImmutables.insertOrderSet());
+                } else {
+                    return new InsertableDeserializer<>(type, elementDeserializer, elementTypeDeserializer, false, JImmutables.set());
+                }
             }
-        } else {
-            return super.findCollectionLikeDeserializer(type, config, beanDesc, elementTypeDeserializer, elementDeserializer);
+            throw new IllegalArgumentException("Class is not supported: " + type.getRawClass().getName());
         }
+        return super.findCollectionLikeDeserializer(type, config, beanDesc, elementTypeDeserializer, elementDeserializer);
     }
 
     private void requireCollectionOfComparableElements(CollectionLikeType actualType)
