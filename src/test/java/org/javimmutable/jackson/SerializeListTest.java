@@ -62,9 +62,9 @@ public class SerializeListTest
         assertEquals("{\"names\":[\"jones\",\"smith\",null]}", json);
         assertEquals(names, mapper.readValue(json, NamesBean.class));
 
-        final OrgBean org = new OrgBean(names, list("oxford", "cambridge"));
+        final OrgBean org = new OrgBean(names, list(new NamesBean(list("oxford", "cambridge"))));
         json = mapper.writeValueAsString(org);
-        assertEquals("{\"names\":{\"names\":[\"jones\",\"smith\",null]},\"cities\":[\"oxford\",\"cambridge\"]}", json);
+        assertEquals("{\"names\":{\"names\":[\"jones\",\"smith\",null]},\"cities\":[{\"names\":[\"oxford\",\"cambridge\"]}]}", json);
         assertEquals(org, mapper.readValue(json, OrgBean.class));
 
         final OrgBean nulls = new OrgBean(new NamesBean(null), null);
@@ -86,9 +86,9 @@ public class SerializeListTest
         assertEquals("{\"names\":\"jones\"}", json);
         assertEquals(names, mapper.readValue(json, NamesBean.class));
 
-        final OrgBean org = new OrgBean(names, list("cambridge"));
+        final OrgBean org = new OrgBean(names, list(new NamesBean(list("cambridge"))));
         json = mapper.writeValueAsString(org);
-        assertEquals("{\"names\":{\"names\":\"jones\"},\"cities\":\"cambridge\"}", json);
+        assertEquals("{\"names\":{\"names\":\"jones\"},\"cities\":{\"names\":\"cambridge\"}}", json);
         assertEquals(org, mapper.readValue(json, OrgBean.class));
     }
 
@@ -96,11 +96,11 @@ public class SerializeListTest
     public static class OrgBean
     {
         private final NamesBean names;
-        private final JImmutableList<String> cities;
+        private final JImmutableList<NamesBean> cities;
 
         @JsonCreator
         public OrgBean(@JsonProperty("names") NamesBean names,
-                       @JsonProperty("cities") JImmutableList<String> cities)
+                       @JsonProperty("cities") JImmutableList<NamesBean> cities)
         {
             this.names = names;
             this.cities = cities;
@@ -111,7 +111,7 @@ public class SerializeListTest
             return names;
         }
 
-        public JImmutableList<String> getCities()
+        public JImmutableList<NamesBean> getCities()
         {
             return cities;
         }

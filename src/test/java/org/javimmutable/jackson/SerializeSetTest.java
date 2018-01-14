@@ -46,8 +46,14 @@ import org.javimmutable.collections.util.JImmutables;
 import org.javimmutable.jackson.orderings.InsertOrderSet;
 import org.javimmutable.jackson.orderings.SortedOrderSet;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Objects;
+
+import static org.javimmutable.collections.util.JImmutables.*;
+
 public class SerializeSetTest
-        extends TestCase
+    extends TestCase
 {
     public void testSet()
         throws Exception
@@ -77,7 +83,7 @@ public class SerializeSetTest
     {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModules(new JImmutableModule());
-        JImmutableSet<Integer> values = JImmutables.set();
+        JImmutableSet<Integer> values = set();
         ConstructorSetBean bean = new ConstructorSetBean(values.insert(1000).insert(-2000).insert(3000));
         String json = mapper.writeValueAsString(bean);
         assertEquals("{\"values\":[1000,3000,-2000]}", json);
@@ -167,6 +173,18 @@ public class SerializeSetTest
         } catch (JsonMappingException ex) {
             // success
         }
+    }
+
+    public void testUntyped()
+        throws Exception
+    {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModules(new JImmutableModule());
+        final JImmutableSet<Object> values = JImmutables.<Object>insertOrderSet(new ArrayList<Object>(Arrays.asList(18, 76)), "a", 32);
+        UntypedSetBean bean = new UntypedSetBean(values);
+        String json = mapper.writeValueAsString(bean);
+        assertEquals("{\"objects\":[[18,76],\"a\",32]}", json);
+        assertEquals(bean, mapper.readValue(json, bean.getClass()));
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -290,6 +308,57 @@ public class SerializeSetTest
         public void setSorted(JImmutableSet<Object> sorted)
         {
             this.sorted = sorted;
+        }
+    }
+
+    public static class UntypedSetBean
+    {
+        @JsonDeserialize(as = InsertOrderSet.class)
+        private final JImmutableSet<Object> objects;
+
+        public UntypedSetBean(@JsonProperty("objects") JImmutableSet<Object> objects)
+        {
+            this.objects = objects;
+        }
+
+        public JImmutableSet<Object> getObjects()
+        {
+            return objects;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            UntypedSetBean that = (UntypedSetBean)o;
+            return Objects.equals(objects, that.objects);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(objects);
+        }
+
+        @Override
+        public String toString()
+        {
+            StringBuilder sb = new StringBuilder("[");
+            for (Object object : objects) {
+                if (sb.length() > 1) {
+                    sb.append(",");
+                }
+                sb.append(object.getClass().getSimpleName());
+                sb.append("=");
+                sb.append(object.toString());
+            }
+            sb.append("]");
+            return sb.toString();
         }
     }
 }
