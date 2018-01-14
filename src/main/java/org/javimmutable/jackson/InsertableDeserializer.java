@@ -52,6 +52,10 @@ import org.javimmutable.collections.Insertable;
 import javax.annotation.concurrent.Immutable;
 import java.io.IOException;
 
+/**
+ * Deserializer to populate an empty Insertable object in a generic way.
+ * Can be used with any collection that implements Insertable interface.
+ */
 @Immutable
 public class InsertableDeserializer<T extends Insertable>
     extends StdDeserializer<T>

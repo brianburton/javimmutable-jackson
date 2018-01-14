@@ -38,7 +38,7 @@ package org.javimmutable.jackson.orderings;
 import org.javimmutable.collections.JImmutableSet;
 
 /**
- * Place holder interface for use with JsonDeserialize.as to indicate that sorted set should be used
+ * Place holder interface for use with JsonDeserialize to indicate that sorted set should be used
  * when deserializing the field.
  */
 public interface SortedOrderSet<T>

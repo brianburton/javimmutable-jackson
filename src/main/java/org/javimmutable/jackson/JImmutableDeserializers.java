@@ -50,6 +50,10 @@ import org.javimmutable.collections.util.JImmutables;
 import org.javimmutable.jackson.orderings.InsertOrderSet;
 import org.javimmutable.jackson.orderings.SortedOrderSet;
 
+/**
+ * Deserializers implementation that creates InsertableDeserializers for JImmutableList
+ * and JImmutableSet.  Recognizes annotations to create hash, tree, or insert order sets.
+ */
 public class JImmutableDeserializers
     extends Deserializers.Base
 {

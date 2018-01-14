@@ -45,6 +45,10 @@ import com.fasterxml.jackson.databind.type.CollectionLikeType;
 import org.javimmutable.collections.JImmutableList;
 import org.javimmutable.collections.JImmutableSet;
 
+/**
+ * Serializers implementation that creates serializer instances for 
+ * JImmutableLst and JImmutableSet.
+ */
 public class JImmutableSerializers
     extends Serializers.Base
 {
