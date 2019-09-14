@@ -3,7 +3,7 @@
 
     <groupId>org.javimmutable</groupId>
     <artifactId>javimmutable-jackson</artifactId>
-    <version>3.0</version>
+    <version>3.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>javimmutable-jackson</name>
@@ -57,7 +57,7 @@
     <scm>
         <connection>scm:git:git://github.com/brianburton/javimmutable-jackson.git</connection>
         <developerConnection>scm:git:git@github.com:brianburton/javimmutable-jackson.git</developerConnection>
-        <tag>v3.0</tag>
+        <tag>v2.2.0</tag>
         <url>https://github.com/brianburton/javimmutable-jackson</url>
     </scm>
 
