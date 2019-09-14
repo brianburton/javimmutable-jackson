@@ -36,11 +36,11 @@
 package org.javimmutable.jackson;
 
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.type.CollectionLikeType;
 import com.fasterxml.jackson.databind.type.TypeBindings;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.databind.type.TypeModifier;
-import org.javimmutable.collections.JImmutableList;
-import org.javimmutable.collections.JImmutableSet;
+import org.javimmutable.collections.Insertable;
 
 import java.lang.reflect.Type;
 
@@ -56,14 +56,10 @@ public class JImmutableTypeModifier
                                TypeBindings context,
                                TypeFactory typeFactory)
     {
-        if (type.isTypeOrSubTypeOf(JImmutableList.class) || type.isTypeOrSubTypeOf(JImmutableSet.class)) {
-            JavaType contentType = type.containedType(0);
-            if (contentType == null) {
-                contentType = TypeFactory.unknownType();
-            }
-            return typeFactory.constructCollectionLikeType(type.getRawClass(), contentType);
+        if (type.isTypeOrSubTypeOf(Insertable.class)) {
+            return CollectionLikeType.upgradeFrom(type, type.containedTypeOrUnknown(0));
+        } else {
+            return type;
         }
-        return type;
     }
-
 }

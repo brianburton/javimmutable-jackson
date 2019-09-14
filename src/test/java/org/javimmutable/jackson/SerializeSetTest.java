@@ -46,15 +46,23 @@ import org.javimmutable.collections.util.JImmutables;
 import org.javimmutable.jackson.orderings.InsertOrderSet;
 import org.javimmutable.jackson.orderings.SortedOrderSet;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.javimmutable.collections.util.JImmutables.*;
 
 public class SerializeSetTest
     extends TestCase
 {
+
+    private static final Pattern VALUE_STRING_REGEX = Pattern.compile("\\{\"(\\w+)\":\\[(-?\\d+(,-?\\d+)*)\\]\\}");
+
     public void testSet()
         throws Exception
     {
@@ -63,7 +71,7 @@ public class SerializeSetTest
         SetBean bean = new SetBean();
         bean.setValues(JImmutables.<Integer>set().insert(1000).insert(-2000).insert(3000));
         String json = mapper.writeValueAsString(bean);
-        assertEquals("{\"values\":[1000,3000,-2000]}", json);
+        assertEquals("{\"values\":[-2000,1000,3000]}", sortValues(json));
         assertEquals(bean, mapper.readValue(json, bean.getClass()));
         assertEquals(json, mapper.writeValueAsString(mapper.readValue(json, bean.getClass())));
 
@@ -86,7 +94,7 @@ public class SerializeSetTest
         JImmutableSet<Integer> values = set();
         ConstructorSetBean bean = new ConstructorSetBean(values.insert(1000).insert(-2000).insert(3000));
         String json = mapper.writeValueAsString(bean);
-        assertEquals("{\"values\":[1000,3000,-2000]}", json);
+        assertEquals("{\"values\":[-2000,1000,3000]}", sortValues(json));
         assertEquals(bean, mapper.readValue(json, bean.getClass()));
         assertEquals(json, mapper.writeValueAsString(mapper.readValue(json, bean.getClass())));
 
@@ -101,6 +109,22 @@ public class SerializeSetTest
         assertEquals(bean, mapper.readValue(json, bean.getClass()));
     }
 
+    private String sortValues(@Nonnull String valuesString)
+    {
+        Matcher m = VALUE_STRING_REGEX.matcher(valuesString);
+        if (!m.matches()) {
+            return valuesString;
+        }
+        final String field = m.group(1);
+        final String[] numbers = m.group(2).split(",");
+        final String sorted = Stream.of(numbers)
+            .map(Integer::parseInt)
+            .sorted()
+            .map(String::valueOf)
+            .collect(Collectors.joining(","));
+        return String.format("{\"%s\":[%s]}", field, sorted);
+    }
+    
     public void testSortedSet()
         throws Exception
     {

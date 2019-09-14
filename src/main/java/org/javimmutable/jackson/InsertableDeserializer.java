@@ -110,7 +110,8 @@ public class InsertableDeserializer<T extends Insertable>
         } else if (acceptSingleValue) {
             return deserializeSingleValue(parser, context);
         } else {
-            throw context.mappingException(collectionType.getRawClass());
+            context.handleUnexpectedToken(collectionType.getRawClass(), parser);
+            throw new IOException("expected array start token");
         }
     }
 

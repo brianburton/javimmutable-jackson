@@ -44,7 +44,6 @@ import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
 import com.fasterxml.jackson.databind.type.CollectionLikeType;
 import org.javimmutable.collections.Insertable;
 import org.javimmutable.collections.JImmutableList;
-import org.javimmutable.collections.JImmutableRandomAccessList;
 import org.javimmutable.collections.JImmutableSet;
 import org.javimmutable.collections.util.JImmutables;
 import org.javimmutable.jackson.orderings.InsertOrderSet;
@@ -66,9 +65,7 @@ public class JImmutableDeserializers
         throws JsonMappingException
     {
         if (type.isTypeOrSubTypeOf(Insertable.class)) {
-            if (type.isTypeOrSubTypeOf(JImmutableRandomAccessList.class)) {
-                return new InsertableDeserializer<>(type, elementDeserializer, elementTypeDeserializer, false, JImmutables.ralist());
-            } else if (type.isTypeOrSubTypeOf(JImmutableList.class)) {
+            if (type.isTypeOrSubTypeOf(JImmutableList.class)) {
                 return new InsertableDeserializer<>(type, elementDeserializer, elementTypeDeserializer, false, JImmutables.list());
             } else if (type.isTypeOrSubTypeOf(JImmutableSet.class)) {
                 if (type.isTypeOrSubTypeOf(SortedOrderSet.class)) {

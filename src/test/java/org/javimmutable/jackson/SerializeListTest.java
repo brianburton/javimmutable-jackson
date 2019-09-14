@@ -46,7 +46,7 @@ import org.javimmutable.collections.JImmutableList;
 import javax.annotation.concurrent.Immutable;
 import java.util.Objects;
 
-import static org.javimmutable.collections.util.JImmutables.list;
+import static org.javimmutable.collections.util.JImmutables.*;
 
 public class SerializeListTest
     extends TestCase

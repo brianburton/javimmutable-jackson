@@ -37,19 +37,18 @@ package org.javimmutable.jackson;
 
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.Module;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 
 /**
  * Basic Jackson {@link Module} that adds support for JImmutable types.
  */
 public class JImmutableModule
-    extends Module
+    extends SimpleModule
 {
-    private static final String NAME = "JImmutableModule";
-
     @Override
     public String getModuleName()
     {
-        return NAME;
+        return "JImmutableModule";
     }
 
     @Override
@@ -61,6 +60,7 @@ public class JImmutableModule
     @Override
     public void setupModule(SetupContext context)
     {
+        super.setupModule(context);
         context.addDeserializers(new JImmutableDeserializers());
         context.addSerializers(new JImmutableSerializers());
         context.addTypeModifier(new JImmutableTypeModifier());
