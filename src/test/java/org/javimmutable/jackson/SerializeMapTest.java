@@ -41,6 +41,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import junit.framework.TestCase;
 import org.javimmutable.collections.JImmutableMap;
 import org.javimmutable.collections.util.JImmutables;
+import org.javimmutable.jackson.orderings.JsonJImmutableSorted;
 
 import javax.annotation.concurrent.Immutable;
 import java.util.Objects;
@@ -56,11 +57,13 @@ public class SerializeMapTest
 
         JImmutableMap<String, Inner> innerMap = JImmutables.map();
         JImmutableMap<String, Integer> intMap = JImmutables.map();
+        JImmutableMap<String, Integer> sortedMap = JImmutables.sortedMap();
         Outer root = new Outer("a",
-                                     innerMap.assign("b", new Inner(intMap.assign("t", 1).assign("e", 2))),
-                                     innerMap.assign("c", new Inner(intMap.assign("w", 1))));
+                               innerMap.assign("b", new Inner(intMap.assign("t", 1).assign("e", 2))),
+                               innerMap.assign("c", new Inner(intMap.assign("w", 1))),
+                               new Sorted(sortedMap.assign("x", 20).assign("a", -203).assign("q", 7563)));
         String json = mapper.writeValueAsString(root);
-        assertEquals("{\"something\":\"a\",\"alpha\":{\"b\":{\"gamma\":{\"e\":2,\"t\":1}}},\"beta\":{\"c\":{\"gamma\":{\"w\":1}}}}", json);
+        assertEquals("{\"something\":\"a\",\"alpha\":{\"b\":{\"gamma\":{\"e\":2,\"t\":1}}},\"beta\":{\"c\":{\"gamma\":{\"w\":1}}},\"sorted\":{\"sortMe\":{\"a\":-203,\"q\":7563,\"x\":20}}}", json);
         assertEquals(root, mapper.readValue(json, Outer.class));
     }
 
@@ -70,15 +73,18 @@ public class SerializeMapTest
         private final String something;
         private final JImmutableMap<String, Inner> alpha;
         private final JImmutableMap<String, Inner> beta;
+        private final Sorted sorted;
 
         @JsonCreator
         public Outer(@JsonProperty("something") String something,
                      @JsonProperty("alpha") JImmutableMap<String, Inner> alpha,
-                     @JsonProperty("beta") JImmutableMap<String, Inner> beta)
+                     @JsonProperty("beta") JImmutableMap<String, Inner> beta,
+                     @JsonProperty("sorted") Sorted sorted)
         {
             this.something = something;
             this.alpha = alpha;
             this.beta = beta;
+            this.sorted = sorted;
         }
 
         public String getSomething()
@@ -94,6 +100,11 @@ public class SerializeMapTest
         public JImmutableMap<String, Inner> getBeta()
         {
             return beta;
+        }
+
+        public Sorted getSorted()
+        {
+            return sorted;
         }
 
         @Override
@@ -114,7 +125,10 @@ public class SerializeMapTest
             if (alpha != null ? !alpha.equals(outer.alpha) : outer.alpha != null) {
                 return false;
             }
-            return beta != null ? beta.equals(outer.beta) : outer.beta == null;
+            if (beta != null ? !beta.equals(outer.beta) : outer.beta != null) {
+                return false;
+            }
+            return sorted != null ? sorted.equals(outer.sorted) : outer.sorted == null;
         }
 
         @Override
@@ -123,6 +137,7 @@ public class SerializeMapTest
             int result = something != null ? something.hashCode() : 0;
             result = 31 * result + (alpha != null ? alpha.hashCode() : 0);
             result = 31 * result + (beta != null ? beta.hashCode() : 0);
+            result = 31 * result + (sorted != null ? sorted.hashCode() : 0);
             return result;
         }
     }
@@ -160,6 +175,44 @@ public class SerializeMapTest
         public int hashCode()
         {
             return Objects.hash(gamma);
+        }
+    }
+
+    @Immutable
+    public static class Sorted
+    {
+        @JsonJImmutableSorted
+        private final JImmutableMap<String, Integer> sortMe;
+
+        @JsonCreator
+        public Sorted(@JsonProperty("sortMe") JImmutableMap<String, Integer> sortMe)
+        {
+            assertEquals(JImmutables.sortedMap().getClass(), sortMe.getClass());
+            this.sortMe = sortMe;
+        }
+
+        public JImmutableMap<String, Integer> getSortMe()
+        {
+            return sortMe;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Sorted inner = (Sorted)o;
+            return Objects.equals(sortMe, inner.sortMe);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(sortMe);
         }
     }
 }

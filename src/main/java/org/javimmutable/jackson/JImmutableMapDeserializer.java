@@ -40,6 +40,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.BeanProperty;
 import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.KeyDeserializer;
@@ -48,6 +49,8 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
 import com.fasterxml.jackson.databind.type.MapLikeType;
 import org.javimmutable.collections.JImmutableMap;
+import org.javimmutable.collections.util.JImmutables;
+import org.javimmutable.jackson.orderings.JsonJImmutableSorted;
 
 import javax.annotation.concurrent.Immutable;
 import java.io.IOException;
@@ -66,13 +69,13 @@ public class JImmutableMapDeserializer<T extends JImmutableMap<Object, Object>>
     private final KeyDeserializer keyDeserializer;
     private final JsonDeserializer valueDeserializer;
     private final TypeDeserializer typeDeserializer;
-    private final Supplier<JImmutableMap.Builder<Object,Object>> builderFactory;
+    private final Supplier<JImmutableMap.Builder> builderFactory;
 
     public JImmutableMapDeserializer(MapLikeType mapType,
                                      KeyDeserializer keyDeserializer,
                                      JsonDeserializer valueDeserializer,
                                      TypeDeserializer typeDeserializer,
-                                     Supplier<JImmutableMap.Builder<Object, Object>> builderFactory)
+                                     Supplier<JImmutableMap.Builder> builderFactory)
     {
         super(mapType);
         this.mapType = mapType;
@@ -102,9 +105,23 @@ public class JImmutableMapDeserializer<T extends JImmutableMap<Object, Object>>
             typeDeserializer = typeDeserializer.forProperty(property);
         }
 
+        final Supplier<JImmutableMap.Builder> builderFactory = selectBuilderForProperty(property, this.builderFactory);
         return new JImmutableMapDeserializer<>(mapType, keyDeserializer, valueDeserializer, typeDeserializer, builderFactory);
     }
 
+    private Supplier<JImmutableMap.Builder> selectBuilderForProperty(BeanProperty property,
+                                                                     Supplier<JImmutableMap.Builder> defaultBuilderFactory)
+    {
+        if (property.getAnnotation(JsonJImmutableSorted.class) != null) {
+            final JavaType keyType = mapType.getKeyType();
+            if (!keyType.isTypeOrSubTypeOf(Comparable.class)) {
+                throw new IllegalArgumentException("key class for sorted map is not comparable (" + keyType.getRawClass().getName() + ")");
+            }
+            return JImmutables::sortedMapBuilder;
+        }
+        return defaultBuilderFactory;
+    }   
+    
     @SuppressWarnings("unchecked")
     @Override
     public T deserialize(JsonParser parser,
