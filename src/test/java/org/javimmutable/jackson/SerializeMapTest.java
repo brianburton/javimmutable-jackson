@@ -41,6 +41,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import junit.framework.TestCase;
 import org.javimmutable.collections.JImmutableMap;
 import org.javimmutable.collections.util.JImmutables;
+import org.javimmutable.jackson.orderings.JsonJImmutableInsertOrder;
 import org.javimmutable.jackson.orderings.JsonJImmutableSorted;
 
 import javax.annotation.concurrent.Immutable;
@@ -65,6 +66,12 @@ public class SerializeMapTest
         String json = mapper.writeValueAsString(root);
         assertEquals("{\"something\":\"a\",\"alpha\":{\"b\":{\"gamma\":{\"e\":2,\"t\":1}}},\"beta\":{\"c\":{\"gamma\":{\"w\":1}}},\"sorted\":{\"sortMe\":{\"a\":-203,\"q\":7563,\"x\":20}}}", json);
         assertEquals(root, mapper.readValue(json, Outer.class));
+
+        JImmutableMap<String, Integer> insertOrderMap = JImmutables.insertOrderMap();
+        InsertOrder io = new InsertOrder(insertOrderMap.assign("x", 1).assign("a", 2));
+        json = mapper.writeValueAsString(io);
+        assertEquals("{\"objects\":{\"x\":1,\"a\":2}}", json);
+        assertEquals(io, mapper.readValue(json, InsertOrder.class));
     }
 
     @Immutable
@@ -213,6 +220,45 @@ public class SerializeMapTest
         public int hashCode()
         {
             return Objects.hash(sortMe);
+        }
+    }
+
+    public static class InsertOrder
+    {
+        @JsonJImmutableInsertOrder
+        private final JImmutableMap<String, Integer> objects;
+
+        @JsonCreator
+        public InsertOrder(@JsonProperty("objects") JImmutableMap<String, Integer> objects)
+        {
+            assertEquals(JImmutables.insertOrderMap().getClass(), objects.getClass());
+            this.objects = objects;
+        }
+
+        public JImmutableMap<String, Integer> getObjects()
+        {
+            return objects;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            InsertOrder that = (InsertOrder)o;
+
+            return objects != null ? objects.equals(that.objects) : that.objects == null;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return objects != null ? objects.hashCode() : 0;
         }
     }
 }

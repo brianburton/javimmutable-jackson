@@ -114,15 +114,15 @@ public class InsertableDeserializer<T extends Insertable>
                                      JsonParser parser)
         throws JsonMappingException
     {
+        if (property.getAnnotation(JsonJImmutableInsertOrder.class) != null) {
+            return insertOrderEmpty;
+        }
         if (property.getAnnotation(JsonJImmutableSorted.class) != null) {
             final JavaType keyType = collectionType.getContentType();
             if (!keyType.isTypeOrSubTypeOf(Comparable.class)) {
                 throw new JsonMappingException(parser, "key class for sorted collection is not comparable (" + keyType.getRawClass().getName() + ")");
             }
             return sortedEmpty;
-        }
-        if (property.getAnnotation(JsonJImmutableInsertOrder.class) != null) {
-            return insertOrderEmpty;
         }
         return empty;
     }

@@ -49,7 +49,9 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
 import com.fasterxml.jackson.databind.type.MapLikeType;
 import org.javimmutable.collections.JImmutableMap;
+import org.javimmutable.collections.inorder.JImmutableInsertOrderMap;
 import org.javimmutable.collections.util.JImmutables;
+import org.javimmutable.jackson.orderings.JsonJImmutableInsertOrder;
 import org.javimmutable.jackson.orderings.JsonJImmutableSorted;
 
 import javax.annotation.concurrent.Immutable;
@@ -113,6 +115,9 @@ public class JImmutableMapDeserializer<T extends JImmutableMap<Object, Object>>
                                                                      JsonParser parser)
         throws JsonMappingException
     {
+        if (property.getAnnotation(JsonJImmutableInsertOrder.class) != null) {
+            return JImmutableInsertOrderMap::builder;
+        }
         if (property.getAnnotation(JsonJImmutableSorted.class) != null) {
             final JavaType keyType = mapType.getKeyType();
             if (!keyType.isTypeOrSubTypeOf(Comparable.class)) {
