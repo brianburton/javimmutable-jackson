@@ -89,9 +89,9 @@ public class JImmutableDeserializers
     {
         if (type.isTypeOrSubTypeOf(Insertable.class)) {
             if (type.isTypeOrSubTypeOf(JImmutableList.class)) {
-                return new InsertableDeserializer<>(type, elementDeserializer, elementTypeDeserializer, false, list(), list());
+                return new InsertableDeserializer<>(type, elementDeserializer, elementTypeDeserializer, false, list(), list(), list());
             } else if (type.isTypeOrSubTypeOf(JImmutableSet.class)) {
-                return new InsertableDeserializer<>(type, elementDeserializer, elementTypeDeserializer, false, set(), sortedSet());
+                return new InsertableDeserializer<>(type, elementDeserializer, elementTypeDeserializer, false, set(), sortedSet(), insertOrderSet());
             }
             throw new IllegalArgumentException("Class is not supported: " + type.getRawClass().getName());
         }

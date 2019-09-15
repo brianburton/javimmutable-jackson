@@ -39,11 +39,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import junit.framework.TestCase;
 import org.javimmutable.collections.JImmutableSet;
 import org.javimmutable.collections.util.JImmutables;
-import org.javimmutable.jackson.orderings.InsertOrderSet;
+import org.javimmutable.jackson.orderings.JsonJImmutableInsertOrder;
 import org.javimmutable.jackson.orderings.JsonJImmutableSorted;
 
 import javax.annotation.Nonnull;
@@ -217,7 +216,7 @@ public class SerializeSetTest
         private JImmutableSet<Integer> values;
         @JsonJImmutableSorted
         private JImmutableSet<Integer> sorted;
-        @JsonDeserialize(as = InsertOrderSet.class)
+        @JsonJImmutableInsertOrder
         private JImmutableSet<Integer> inorder;
 
         public JImmutableSet<Integer> getValues()
@@ -337,11 +336,12 @@ public class SerializeSetTest
 
     public static class UntypedSetBean
     {
-        @JsonDeserialize(as = InsertOrderSet.class)
+        @JsonJImmutableInsertOrder
         private final JImmutableSet<Object> objects;
 
         public UntypedSetBean(@JsonProperty("objects") JImmutableSet<Object> objects)
         {
+            assertEquals(JImmutables.insertOrderSet().getClass(), objects.getClass());
             this.objects = objects;
         }
 
