@@ -37,10 +37,12 @@ package org.javimmutable.jackson;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.type.CollectionLikeType;
+import com.fasterxml.jackson.databind.type.MapLikeType;
 import com.fasterxml.jackson.databind.type.TypeBindings;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.databind.type.TypeModifier;
 import org.javimmutable.collections.Insertable;
+import org.javimmutable.collections.JImmutableMap;
 
 import java.lang.reflect.Type;
 
@@ -56,7 +58,9 @@ public class JImmutableTypeModifier
                                TypeBindings context,
                                TypeFactory typeFactory)
     {
-        if (type.isTypeOrSubTypeOf(Insertable.class)) {
+        if (type.isTypeOrSubTypeOf(JImmutableMap.class)) {
+            return MapLikeType.upgradeFrom(type, type.containedTypeOrUnknown(0), type.containedTypeOrUnknown(1));
+        } else if (type.isTypeOrSubTypeOf(Insertable.class)) {
             return CollectionLikeType.upgradeFrom(type, type.containedTypeOrUnknown(0));
         } else {
             return type;

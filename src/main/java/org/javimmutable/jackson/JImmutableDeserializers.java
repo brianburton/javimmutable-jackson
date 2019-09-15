@@ -37,13 +37,17 @@ package org.javimmutable.jackson;
 
 import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.DeserializationConfig;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.KeyDeserializer;
 import com.fasterxml.jackson.databind.deser.Deserializers;
 import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
 import com.fasterxml.jackson.databind.type.CollectionLikeType;
+import com.fasterxml.jackson.databind.type.MapLikeType;
 import org.javimmutable.collections.Insertable;
 import org.javimmutable.collections.JImmutableList;
+import org.javimmutable.collections.JImmutableMap;
 import org.javimmutable.collections.JImmutableSet;
 import org.javimmutable.collections.util.JImmutables;
 import org.javimmutable.jackson.orderings.InsertOrderSet;
@@ -56,6 +60,25 @@ import org.javimmutable.jackson.orderings.SortedOrderSet;
 public class JImmutableDeserializers
     extends Deserializers.Base
 {
+    @Override
+    public JsonDeserializer<?> findMapLikeDeserializer(MapLikeType type,
+                                                       DeserializationConfig config,
+                                                       BeanDescription beanDesc,
+                                                       KeyDeserializer keyDeserializer,
+                                                       TypeDeserializer elementTypeDeserializer,
+                                                       JsonDeserializer<?> elementDeserializer)
+        throws JsonMappingException
+    {
+        if (type.isTypeOrSubTypeOf(JImmutableMap.class)) {
+            final JavaType keyType = type.getKeyType();
+            if (!keyType.isTypeOrSubTypeOf(String.class)) {
+                throw new IllegalArgumentException("JImmutableMaps must have String keys (" + keyType.getRawClass().getName() + ")");
+            }
+            return new JImmutableMapDeserializer<>(type, keyDeserializer, elementDeserializer, elementTypeDeserializer, JImmutables::mapBuilder);
+        }
+        return super.findMapLikeDeserializer(type, config, beanDesc, keyDeserializer, elementTypeDeserializer, elementDeserializer);
+    }
+
     @Override
     public JsonDeserializer<?> findCollectionLikeDeserializer(CollectionLikeType type,
                                                               DeserializationConfig config,
@@ -82,11 +105,11 @@ public class JImmutableDeserializers
         return super.findCollectionLikeDeserializer(type, config, beanDesc, elementTypeDeserializer, elementDeserializer);
     }
 
-    private void requireCollectionOfComparableElements(CollectionLikeType actualType)
+    private void requireCollectionOfComparableElements(CollectionLikeType collectionType)
     {
-        Class<?> elemType = actualType.getContentType().getRawClass();
-        if (!Comparable.class.isAssignableFrom(elemType)) {
-            throw new IllegalArgumentException("Can not handle JImmutables.sortedSet() with elements that are not Comparable<?> (" + elemType.getName() + ")");
+        final JavaType elemType = collectionType.getContentType();
+        if (!elemType.isTypeOrSubTypeOf(Comparable.class)) {
+            throw new IllegalArgumentException("Can not handle sorted JImmutableSets with elements that are not Comparable<?> (" + elemType.getRawClass().getName() + ")");
         }
     }
 }

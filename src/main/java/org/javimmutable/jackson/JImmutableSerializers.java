@@ -41,17 +41,43 @@ import com.fasterxml.jackson.databind.SerializationConfig;
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import com.fasterxml.jackson.databind.ser.Serializers;
 import com.fasterxml.jackson.databind.ser.std.IterableSerializer;
+import com.fasterxml.jackson.databind.ser.std.MapSerializer;
 import com.fasterxml.jackson.databind.type.CollectionLikeType;
+import com.fasterxml.jackson.databind.type.MapLikeType;
 import org.javimmutable.collections.JImmutableList;
+import org.javimmutable.collections.JImmutableMap;
 import org.javimmutable.collections.JImmutableSet;
 
+import java.util.Collections;
+
 /**
- * Serializers implementation that creates serializer instances for 
- * JImmutableLst and JImmutableSet.
+ * Serializers implementation that creates serializer instances for JImmutableMap,
+ * JImmutableLst, and JImmutableSet.
  */
 public class JImmutableSerializers
     extends Serializers.Base
 {
+    @Override
+    public JsonSerializer<?> findMapLikeSerializer(SerializationConfig config,
+                                                   MapLikeType type,
+                                                   BeanDescription beanDesc,
+                                                   JsonSerializer<Object> keySerializer,
+                                                   TypeSerializer elementTypeSerializer,
+                                                   JsonSerializer<Object> elementValueSerializer)
+    {
+        if (type.isTypeOrSubTypeOf(JImmutableMap.class)) {
+            MapSerializer map = MapSerializer.construct(Collections.emptySet(),
+                                                        type,
+                                                        false,
+                                                        elementTypeSerializer,
+                                                        keySerializer,
+                                                        elementValueSerializer,
+                                                        null);
+            return new JImmutableMapSerializer(map);
+        }
+        return super.findMapLikeSerializer(config, type, beanDesc, keySerializer, elementTypeSerializer, elementValueSerializer);
+    }
+
     @Override
     public JsonSerializer<?> findCollectionLikeSerializer(SerializationConfig config,
                                                           CollectionLikeType type,
@@ -59,6 +85,7 @@ public class JImmutableSerializers
                                                           TypeSerializer elementTypeSerializer,
                                                           JsonSerializer<Object> elementValueSerializer)
     {
+
         if (type.isTypeOrSubTypeOf(JImmutableList.class) || type.isTypeOrSubTypeOf(JImmutableSet.class)) {
             return new IterableSerializer(type.getContentType(), false, elementTypeSerializer);
         }
