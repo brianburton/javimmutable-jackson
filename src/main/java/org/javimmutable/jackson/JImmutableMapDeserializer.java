@@ -105,23 +105,24 @@ public class JImmutableMapDeserializer<T extends JImmutableMap<Object, Object>>
             typeDeserializer = typeDeserializer.forProperty(property);
         }
 
-        final Supplier<JImmutableMap.Builder> builderFactory = selectBuilderForProperty(property, this.builderFactory);
+        final Supplier<JImmutableMap.Builder> builderFactory = selectBuilderForProperty(property, context.getParser());
         return new JImmutableMapDeserializer<>(mapType, keyDeserializer, valueDeserializer, typeDeserializer, builderFactory);
     }
 
     private Supplier<JImmutableMap.Builder> selectBuilderForProperty(BeanProperty property,
-                                                                     Supplier<JImmutableMap.Builder> defaultBuilderFactory)
+                                                                     JsonParser parser)
+        throws JsonMappingException
     {
         if (property.getAnnotation(JsonJImmutableSorted.class) != null) {
             final JavaType keyType = mapType.getKeyType();
             if (!keyType.isTypeOrSubTypeOf(Comparable.class)) {
-                throw new IllegalArgumentException("key class for sorted map is not comparable (" + keyType.getRawClass().getName() + ")");
+                throw new JsonMappingException(parser, "key class for sorted map is not comparable (" + keyType.getRawClass().getName() + ")");
             }
             return JImmutables::sortedMapBuilder;
         }
-        return defaultBuilderFactory;
-    }   
-    
+        return builderFactory;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public T deserialize(JsonParser parser,
@@ -132,8 +133,8 @@ public class JImmutableMapDeserializer<T extends JImmutableMap<Object, Object>>
             context.handleUnexpectedToken(mapType.getRawClass(), parser);
             throw new IOException("expected array start token");
         }
-        
-        final JImmutableMap.Builder<Object,Object> builder = builderFactory.get();
+
+        final JImmutableMap.Builder<Object, Object> builder = builderFactory.get();
         while (true) {
             JsonToken token = parser.nextToken();
             if (token == JsonToken.END_OBJECT) {

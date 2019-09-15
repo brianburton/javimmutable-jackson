@@ -41,6 +41,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.BeanProperty;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.deser.ContextualDeserializer;
@@ -48,6 +49,7 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
 import com.fasterxml.jackson.databind.type.CollectionLikeType;
 import org.javimmutable.collections.Insertable;
+import org.javimmutable.jackson.orderings.JsonJImmutableSorted;
 
 import javax.annotation.concurrent.Immutable;
 import java.io.IOException;
@@ -66,12 +68,14 @@ public class InsertableDeserializer<T extends Insertable>
     private final TypeDeserializer typeDeserializer;
     private final boolean acceptSingleValue;
     private final T empty;
+    private final T sortedEmpty;
 
     public InsertableDeserializer(CollectionLikeType collectionType,
                                   JsonDeserializer valueDeserializer,
                                   TypeDeserializer typeDeserializer,
                                   boolean acceptSingleValue,
-                                  T empty)
+                                  T empty,
+                                  T sortedEmpty)
     {
         super(collectionType);
         this.collectionType = collectionType;
@@ -79,6 +83,7 @@ public class InsertableDeserializer<T extends Insertable>
         this.typeDeserializer = typeDeserializer;
         this.acceptSingleValue = acceptSingleValue;
         this.empty = empty;
+        this.sortedEmpty = sortedEmpty;
     }
 
     @Override
@@ -96,8 +101,23 @@ public class InsertableDeserializer<T extends Insertable>
             typeDeserializer = typeDeserializer.forProperty(property);
         }
 
+        T empty = selectEmptyForProperty(property, context.getParser());
         boolean acceptSingleValue = context.isEnabled(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
-        return new InsertableDeserializer<>(collectionType, valueDeserializer, typeDeserializer, acceptSingleValue, empty);
+        return new InsertableDeserializer<>(collectionType, valueDeserializer, typeDeserializer, acceptSingleValue, empty, sortedEmpty);
+    }
+
+    private T selectEmptyForProperty(BeanProperty property,
+                                     JsonParser parser)
+        throws JsonMappingException
+    {
+        if (property.getAnnotation(JsonJImmutableSorted.class) != null) {
+            final JavaType keyType = collectionType.getContentType();
+            if (!keyType.isTypeOrSubTypeOf(Comparable.class)) {
+                throw new JsonMappingException(parser, "key class for sorted collection is not comparable (" + keyType.getRawClass().getName() + ")");
+            }
+            return sortedEmpty;
+        }
+        return empty;
     }
 
     @Override

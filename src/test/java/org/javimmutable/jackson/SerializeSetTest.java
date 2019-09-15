@@ -44,7 +44,7 @@ import junit.framework.TestCase;
 import org.javimmutable.collections.JImmutableSet;
 import org.javimmutable.collections.util.JImmutables;
 import org.javimmutable.jackson.orderings.InsertOrderSet;
-import org.javimmutable.jackson.orderings.SortedOrderSet;
+import org.javimmutable.jackson.orderings.JsonJImmutableSorted;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -124,7 +124,7 @@ public class SerializeSetTest
             .collect(Collectors.joining(","));
         return String.format("{\"%s\":[%s]}", field, sorted);
     }
-    
+
     public void testSortedSet()
         throws Exception
     {
@@ -215,7 +215,7 @@ public class SerializeSetTest
     public static class SetBean
     {
         private JImmutableSet<Integer> values;
-        @JsonDeserialize(as = SortedOrderSet.class)
+        @JsonJImmutableSorted
         private JImmutableSet<Integer> sorted;
         @JsonDeserialize(as = InsertOrderSet.class)
         private JImmutableSet<Integer> inorder;
@@ -321,7 +321,7 @@ public class SerializeSetTest
 
     public static class UnsortableSetBean
     {
-        @JsonDeserialize(as = SortedOrderSet.class)
+        @JsonJImmutableSorted
         private JImmutableSet<Object> sorted;
 
         public JImmutableSet<Object> getSorted()

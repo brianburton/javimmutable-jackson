@@ -50,8 +50,8 @@ import org.javimmutable.collections.JImmutableList;
 import org.javimmutable.collections.JImmutableMap;
 import org.javimmutable.collections.JImmutableSet;
 import org.javimmutable.collections.util.JImmutables;
-import org.javimmutable.jackson.orderings.InsertOrderSet;
-import org.javimmutable.jackson.orderings.SortedOrderSet;
+
+import static org.javimmutable.collections.util.JImmutables.*;
 
 /**
  * Deserializers implementation that creates InsertableDeserializers for JImmutableList
@@ -89,27 +89,12 @@ public class JImmutableDeserializers
     {
         if (type.isTypeOrSubTypeOf(Insertable.class)) {
             if (type.isTypeOrSubTypeOf(JImmutableList.class)) {
-                return new InsertableDeserializer<>(type, elementDeserializer, elementTypeDeserializer, false, JImmutables.list());
+                return new InsertableDeserializer<>(type, elementDeserializer, elementTypeDeserializer, false, list(), list());
             } else if (type.isTypeOrSubTypeOf(JImmutableSet.class)) {
-                if (type.isTypeOrSubTypeOf(SortedOrderSet.class)) {
-                    requireCollectionOfComparableElements(type);
-                    return new InsertableDeserializer<>(type, elementDeserializer, elementTypeDeserializer, false, JImmutables.sortedSet());
-                } else if (type.isTypeOrSubTypeOf(InsertOrderSet.class)) {
-                    return new InsertableDeserializer<>(type, elementDeserializer, elementTypeDeserializer, false, JImmutables.insertOrderSet());
-                } else {
-                    return new InsertableDeserializer<>(type, elementDeserializer, elementTypeDeserializer, false, JImmutables.set());
-                }
+                return new InsertableDeserializer<>(type, elementDeserializer, elementTypeDeserializer, false, set(), sortedSet());
             }
             throw new IllegalArgumentException("Class is not supported: " + type.getRawClass().getName());
         }
         return super.findCollectionLikeDeserializer(type, config, beanDesc, elementTypeDeserializer, elementDeserializer);
-    }
-
-    private void requireCollectionOfComparableElements(CollectionLikeType collectionType)
-    {
-        final JavaType elemType = collectionType.getContentType();
-        if (!elemType.isTypeOrSubTypeOf(Comparable.class)) {
-            throw new IllegalArgumentException("Can not handle sorted JImmutableSets with elements that are not Comparable<?> (" + elemType.getRawClass().getName() + ")");
-        }
     }
 }
