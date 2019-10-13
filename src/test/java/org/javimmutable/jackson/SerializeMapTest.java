@@ -47,15 +47,25 @@ import org.javimmutable.jackson.orderings.JsonJImmutableSorted;
 import javax.annotation.concurrent.Immutable;
 import java.util.Objects;
 
+import static org.javimmutable.collections.util.JImmutables.*;
+
 public class SerializeMapTest
     extends TestCase
 {
+
+    private ObjectMapper mapper;
+
+    @Override
+    public void setUp()
+        throws Exception
+    {
+        mapper = new ObjectMapper();
+        mapper.registerModules(new JImmutableModule());
+    }
+
     public void test()
         throws Exception
     {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModules(new JImmutableModule());
-
         JImmutableMap<String, Inner> innerMap = JImmutables.map();
         JImmutableMap<String, Integer> intMap = JImmutables.map();
         JImmutableMap<String, Integer> sortedMap = JImmutables.sortedMap();
@@ -72,6 +82,28 @@ public class SerializeMapTest
         json = mapper.writeValueAsString(io);
         assertEquals("{\"objects\":{\"x\":1,\"a\":2}}", json);
         assertEquals(io, mapper.readValue(json, InsertOrder.class));
+    }
+
+    public void testAnnotatedConstructor()
+        throws Exception
+    {
+        final String json = "{\n" +
+                            "  \"sorted\":{\n" +
+                            "    \"i\":9,\n" +
+                            "    \"a\":1,\n" +
+                            "    \"d\":4,\n" +
+                            "    \"g\":7\n" +
+                            "  },\n" +
+                            "  \"inorder\":{\n" +
+                            "    \"i\":9,\n" +
+                            "    \"a\":1,\n" +
+                            "    \"d\":4,\n" +
+                            "    \"g\":7\n" +
+                            "  }\n" +
+                            "}";
+        AnnotatedConstructorBean bean = mapper.readValue(json, AnnotatedConstructorBean.class);
+        assertEquals(list("a", "d", "g", "i"), list(bean.getSorted().keys()));
+        assertEquals(list("i", "a", "d", "g"), list(bean.getInorder().keys()));
     }
 
     @Immutable
@@ -259,6 +291,29 @@ public class SerializeMapTest
         public int hashCode()
         {
             return objects != null ? objects.hashCode() : 0;
+        }
+    }
+
+    public static class AnnotatedConstructorBean
+    {
+        private final JImmutableMap<String, Integer> sorted;
+        private final JImmutableMap<String, Integer> inorder;
+
+        public AnnotatedConstructorBean(@JsonProperty("sorted") @JsonJImmutableSorted JImmutableMap<String, Integer> sorted,
+                                        @JsonProperty("inorder") @JsonJImmutableInsertOrder JImmutableMap<String, Integer> inorder)
+        {
+            this.sorted = sorted;
+            this.inorder = inorder;
+        }
+
+        public JImmutableMap<String, Integer> getSorted()
+        {
+            return sorted;
+        }
+
+        public JImmutableMap<String, Integer> getInorder()
+        {
+            return inorder;
         }
     }
 }

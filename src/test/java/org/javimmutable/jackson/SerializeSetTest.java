@@ -61,12 +61,19 @@ public class SerializeSetTest
 {
 
     private static final Pattern VALUE_STRING_REGEX = Pattern.compile("\\{\"(\\w+)\":\\[(-?\\d+(,-?\\d+)*)\\]\\}");
+    private ObjectMapper mapper;
+
+    @Override
+    public void setUp()
+        throws Exception
+    {
+        mapper = new ObjectMapper();
+        mapper.registerModules(new JImmutableModule());
+    }
 
     public void testSet()
         throws Exception
     {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModules(new JImmutableModule());
         SetBean bean = new SetBean();
         bean.setValues(JImmutables.<Integer>set().insert(1000).insert(-2000).insert(3000));
         String json = mapper.writeValueAsString(bean);
@@ -74,7 +81,7 @@ public class SerializeSetTest
         assertEquals(bean, mapper.readValue(json, bean.getClass()));
         assertEquals(json, mapper.writeValueAsString(mapper.readValue(json, bean.getClass())));
 
-        bean.setValues(JImmutables.<Integer>set());
+        bean.setValues(JImmutables.set());
         json = mapper.writeValueAsString(bean);
         assertEquals("{\"values\":[]}", json);
         assertEquals(bean, mapper.readValue(json, bean.getClass()));
@@ -88,8 +95,6 @@ public class SerializeSetTest
     public void testConstructorSet()
         throws Exception
     {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModules(new JImmutableModule());
         JImmutableSet<Integer> values = set();
         ConstructorSetBean bean = new ConstructorSetBean(values.insert(1000).insert(-2000).insert(3000));
         String json = mapper.writeValueAsString(bean);
@@ -97,7 +102,7 @@ public class SerializeSetTest
         assertEquals(bean, mapper.readValue(json, bean.getClass()));
         assertEquals(json, mapper.writeValueAsString(mapper.readValue(json, bean.getClass())));
 
-        bean = new ConstructorSetBean(JImmutables.<Integer>set());
+        bean = new ConstructorSetBean(JImmutables.set());
         json = mapper.writeValueAsString(bean);
         assertEquals("{\"values\":[]}", json);
         assertEquals(bean, mapper.readValue(json, bean.getClass()));
@@ -127,8 +132,6 @@ public class SerializeSetTest
     public void testSortedSet()
         throws Exception
     {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModules(new JImmutableModule());
         JImmutableSet<Integer> sorted = JImmutables.<Integer>sortedSet().insert(1000).insert(-2000).insert(3000);
         SetBean bean = new SetBean();
         bean.setSorted(sorted);
@@ -155,8 +158,6 @@ public class SerializeSetTest
     public void testInsertOrderSet()
         throws Exception
     {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModules(new JImmutableModule());
         JImmutableSet<Integer> inorder = JImmutables.<Integer>insertOrderSet().insert(1000).insert(-2000).insert(3000);
         SetBean bean = new SetBean();
         bean.setInorder(inorder);
@@ -183,8 +184,6 @@ public class SerializeSetTest
     public void testUnsortableSet()
         throws Exception
     {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModules(new JImmutableModule());
         JImmutableSet<Object> inorder = JImmutables.insertOrderSet().insert(1000).insert(-2000).insert(3000);
         UnsortableSetBean bean = new UnsortableSetBean();
         bean.setSorted(inorder);
@@ -201,14 +200,24 @@ public class SerializeSetTest
     public void testUntyped()
         throws Exception
     {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModules(new JImmutableModule());
-        final JImmutableSet<Object> values = JImmutables.<Object>insertOrderSet(new ArrayList<Object>(Arrays.asList(18, 76)), "a", 32);
+        final JImmutableSet<Object> values = JImmutables.insertOrderSet(new ArrayList<Object>(Arrays.asList(18, 76)), "a", 32);
         UntypedSetBean bean = new UntypedSetBean(values);
         String json = mapper.writeValueAsString(bean);
         assertEquals("{\"objects\":[[18,76],\"a\",32]}", json);
         assertEquals(bean, mapper.readValue(json, bean.getClass()));
     }
+
+    public void testAnnotatedConstructor()
+        throws Exception
+    {
+        final String json = "{\n" +
+                            "  \"sorted\": [9,1,7,4],\n" +
+                            "  \"inorder\": [9,1,7,4]\n" +
+                            "}";
+        AnnotatedConstructorSetBean bean = mapper.readValue(json, AnnotatedConstructorSetBean.class);
+        assertEquals(list(1, 4, 7, 9), list(bean.getSorted()));
+        assertEquals(list(9, 1, 7, 4), list(bean.getInorder()));
+    }    
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class SetBean
@@ -315,6 +324,58 @@ public class SerializeSetTest
         public int hashCode()
         {
             return values.hashCode();
+        }
+    }
+
+    public static class AnnotatedConstructorSetBean
+    {
+        private final JImmutableSet<Integer> hashed;
+        private final JImmutableSet<Integer> sorted;
+        private final JImmutableSet<Integer> inorder;
+
+        public AnnotatedConstructorSetBean(@JsonProperty("hashed") JImmutableSet<Integer> hashed,
+                                           @JsonProperty("sorted") @JsonJImmutableSorted JImmutableSet<Integer> sorted,
+                                           @JsonProperty("inorder") @JsonJImmutableInsertOrder JImmutableSet<Integer> inorder)
+        {
+            this.hashed = hashed;
+            this.sorted = sorted;
+            this.inorder = inorder;
+        }
+
+        public JImmutableSet<Integer> getHashed()
+        {
+            return hashed;
+        }
+
+        public JImmutableSet<Integer> getSorted()
+        {
+            return sorted;
+        }
+
+        public JImmutableSet<Integer> getInorder()
+        {
+            return inorder;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            AnnotatedConstructorSetBean that = (AnnotatedConstructorSetBean)o;
+            return Objects.equals(hashed, that.hashed) &&
+                   Objects.equals(sorted, that.sorted) &&
+                   Objects.equals(inorder, that.inorder);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(hashed, sorted, inorder);
         }
     }
 
